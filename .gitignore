@@ -2,6 +2,8 @@
 #*
 # Ignore virtual environment
 venv/
+myvenv/
+opsvenv/
 # Ignore Revit
 Revit/
 
