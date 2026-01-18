@@ -8,10 +8,11 @@ import loadClasses as lc
 
 
 class beamDesign():
-    def __init__(self, d:si.Physical, b:si.Physical, L:si.Physical, L_ayT:si.Physical,
-                  L_ayB:si.Physical, L_aphaT:si.Physical, L_aphaB:si.Physical, rho_b:float,
-                  f_prime_b:si.Physical, phi:float = 0.95, k_4:float = 1.0, k_6:float = 1.0,
-                  k_9:float = 1.0):
+    def __init__(self, d:si.Physical, b:si.Physical, L:si.Physical,
+                  L_ayT:si.Physical, L_ayB:si.Physical, L_aphaT:si.Physical,
+                    L_aphaB:si.Physical, rho_b:float, f_prime_b:si.Physical,
+                      phi:float = 0.95, k_4:float = 1.0, k_6:float = 1.0,
+                        k_9:float = 1.0, loading:lc.loading = None):
         """
         Parameters
         d: Depth of the beam
@@ -46,6 +47,8 @@ class beamDesign():
         self.k_4 = k_4
         self.k_6 = k_6
         self.k_9 = k_9
+        self.loading = loading
+
         # self.designActions = designActions
         # self.material = material
 
@@ -173,13 +176,17 @@ class beamDesign():
 
 if __name__ == "__main__":
     # Example usage
+    #file_path = r""
+    file_path = r"C:\Users\datho\PythonProjects\PakCalcs\3d Frame.TXT"
+    member_loading = lc.loading(file_path)
     beam = beamDesign(d=190*mm, b=45*mm, L=4.2*m,
                         L_ayT=300*mm, L_ayB=2100*mm,
                         L_aphaT=4200*m, L_aphaB=4200*mm,
-                        rho_b=0.81, f_prime_b=19*MPa)
+                        rho_b=0.81, f_prime_b=19*MPa,
+                        loading = member_loading)
     
-    member_loading = lc.loading("C:/Users/DATaylor/Documents/Personal/PakCalcs/PakCalcs/3d Frame.TXT")
     #print(member_loading.plc_titles)
-    print(member_loading.loads[13]["members"][5][5]['Ax'])
+    for n in beam.loading.loads[13]["members"][5].keys():
+        print(beam.loading.loads[11]["members"][21][n]['Mz'])
     
     

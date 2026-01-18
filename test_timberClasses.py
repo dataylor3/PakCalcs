@@ -11,7 +11,7 @@ si = tc.si
 # Helper to build a beam with convenient defaults, letting each test override as needed
 
 def make_beam(
-    d=300*mm,
+    d: si.Physical=300*mm,
     b=45*mm,
     L=10*m,
     L_ayT=0.3*m,
