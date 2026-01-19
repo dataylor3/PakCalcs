@@ -245,12 +245,29 @@ class loading():
                         if s and not s[0].isdigit():
                             in_titles = False
                 
+                if line.startswith("UNITS"):
+                    # Remove the leading "UNITS " 
+                    clean = line.replace("UNITS ", "", 1)
+                    # Split into key:value pairs
+                    pairs = [p.strip() for p in clean.split(",")]
+                    # Build a dictionary of units
+                    units = {}
+                    for p in pairs:
+                        if ":" in p:
+                            key, value = p.split(":", 1)
+                            units[key.strip().upper()] = value.strip()
+                    # Extract the ones you care about
+                    length_unit = units.get("LENGTH")
+                    force_unit = units.get("FORCE")
+                    moment_unit = units.get("MOMENT")
+
                 
                 if in_int_actions:
-                    unit_strs = ["m", "kN", "kN", "kN", "kNm", "kNm", "kNm"]
+                    unit_strs = [length_unit, force_unit, force_unit, force_unit,
+                                 moment_unit, moment_unit, moment_unit]
                     # Map a unit *string* to the corresponding si.<unit> variable
                     _name_to_unit = {
-                        "m": m, "kN": kN, "kNm": kNm
+                        "m": si.m, "kN": kN, "kNm": kNm
                         }
                     parts = [p.strip() for p in s.split(",")]
                     if len(parts) != 10:
