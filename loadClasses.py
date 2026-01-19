@@ -5,6 +5,10 @@ from collections import defaultdict
 from typing import Dict, Any
 from pprint import pprint
 
+import forallpeople as si
+si.environment("mystructural", top_level=True)
+
+
 
 class load_class():
     def __init__(self, id_num: int, title: str):
@@ -243,6 +247,11 @@ class loading():
                 
                 
                 if in_int_actions:
+                    unit_strs = ["m", "kN", "kN", "kN", "kNm", "kNm", "kNm"]
+                    # Map a unit *string* to the corresponding si.<unit> variable
+                    _name_to_unit = {
+                        "m": m, "kN": kN, "kNm": kNm
+                        }
                     parts = [p.strip() for p in s.split(",")]
                     if len(parts) != 10:
                         #print(f'Wrong length: {len(parts)}')
@@ -252,11 +261,12 @@ class loading():
                         member = int(parts[1])
                         pos = int(parts[2])
                         vals = list(map(float, parts[3:]))  # x, Ax, Vy, Vz, Mx, My, Mz
+                        quantities = [v * _name_to_unit[u] for v, u in zip(vals, unit_strs)]
                     except ValueError:
                         in_int_actions = False
                         continue
                     if clc != 0:
-                        self.parsed[clc][member][pos] = dict(zip(self.VAL_KEYS, vals))
+                        self.parsed[clc][member][pos] = dict(zip(self.VAL_KEYS, quantities))
                 #print(json.dumps(self.parsed, indent=2))
 
 
