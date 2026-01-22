@@ -187,6 +187,6 @@ if __name__ == "__main__":
     
     #print(member_loading.plc_titles)
     for n in beam.loading.loads[13]["members"][5].keys():
-        print(beam.loading.loads[11]["members"][21][n]['Mz'])
+        print(beam.loading.loads[11]["members"][22][n]['x'])
     
     
