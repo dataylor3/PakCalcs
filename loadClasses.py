@@ -192,6 +192,7 @@ class loading():
         in_titles = False
         in_combos = False
         in_int_actions = False
+        in_steel_members = False
 
         loads = {}
 
@@ -204,16 +205,25 @@ class loading():
                     in_titles = True
                     in_combos = False
                     in_int_actions = False
+                    in_steel_members = False
                     continue
                 if s.upper().startswith('COMBINATIONS'):
                     in_combos = True
                     in_titles = False
                     in_int_actions = False
+                    in_steel_members = False
                     continue
                 if s.upper().startswith("MEMBER INTERMEDIATE FORCES"):
                     in_combos = False
                     in_titles = False
                     in_int_actions = True
+                    in_steel_members = False
+                    continue
+                if s.upper().startswith('STEELMEMBERS'):
+                    in_titles = False
+                    in_combos = False
+                    in_int_actions = False
+                    in_steel_members = True
                     continue
 
 
@@ -269,6 +279,20 @@ class loading():
                         self.parsed[clc][member][pos] = dict(zip(self.VAL_KEYS, quantities))
                 #print(json.dumps(self.parsed, indent=2))
 
+                if in_steel_members:
+                    pass
+                    """
+                
+                    mt = re.match(r'^\s*(\d+)\s*,\s*\"(.*)\"\s*$', line)
+                    if mt:
+                        lc_num = int(mt.group(1))
+                        lc_title = mt.group(2)
+                        if lc_num in loads:
+                            loads[lc_num]["title"] = lc_title
+                    else:
+                        if s and not s[0].isdigit():
+                            in_titles = False
+                    """ 
 
                 
 
