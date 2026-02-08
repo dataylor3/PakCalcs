@@ -48,6 +48,7 @@ class loading():
         self.title_to_duration = {
             r"\bDead\b": 0.57,
             r"\bLive\b": 0.80,
+            
             r"\bWind\b": 1.00
             }
         self.VAL_KEYS = ["x", "Ax", "Vy", "Vz", "Mx", "My", "Mz"]
