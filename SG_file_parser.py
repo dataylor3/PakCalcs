@@ -44,7 +44,7 @@ class sgFileParser:
                         current_section = line
                     # Look for a method named "handle_HEADERNAME"
                     # Default to self.handle_generic if not found
-                        method_name = f"handle_{current_section.lower()}"
+                        method_name = f"handle_{current_section.lower().replace(' ', '_')}"
                 current_handler = getattr(self, method_name, self.handle_generic)
                     
                 if current_section not in self.data:
@@ -99,15 +99,20 @@ class sgFileParser:
             return  # skip malformed/wrapped lines; adjust if your file wraps
         try:
             clc = int(parts[0])
+            if clc == 12:
+                print("DEBUG: Processing line for clc=12:", line)
             member = int(parts[1])
             pos = int(parts[2])
-            vals = list(map(float, parts[3:]))  # x, Ax, Vy, Vz, Mx, My, Mz
+            vals = list(map(lambda s: round(float(s), 10), parts[3:]))  # x, Ax, Vy, Vz, Mx, My, Mz
             quantities = [v * _name_to_unit[u] for v, u in zip(vals, unit_strs)]
         except ValueError:
             return  # skip malformed lines
         if clc != 0:
+            if clc == 12:
+                print("DEBUG: Processing line for clc=12:", quantities)
+
             self.design_actions_parsed[clc][member][pos] = dict(zip(self.VAL_KEYS, quantities))
-        print(json.dumps(self.design_actions_parsed, indent=2))
+#        print(json.dumps(self.design_actions_parsed, indent=2))
         
 
     def handle_generic(self, section, line):
@@ -148,5 +153,15 @@ if __name__ == "__main__":
 #    print(parser.units.get("MOMENT"))
 #    print(parser.titles)
 #    print(parser.titles)
-    print(parser.design_actions_parsed)
-    print(json.dumps(parser.design_actions_parsed, indent=2))
+#    print(dict(parser.design_actions_parsed))
+#    print(json.dumps(parser.design_actions_parsed, indent=2))
+    """    
+    for k, v in parser.design_actions_parsed.items():
+        try:
+            print(k, v)
+        except Exception as e:
+            print("ERROR on key:", k, "->", e)
+    """
+    for k, v in parser.design_actions_parsed.items():
+        print("KEY:", k)
+        print("VALUE:", v)   # this will crash on the problematic one
