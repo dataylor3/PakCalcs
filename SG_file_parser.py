@@ -145,7 +145,8 @@ class sgFileParser:
                 self.titles[lc_num]["k1"] = max_k1
 
 if __name__ == "__main__":
-    file_path = r"C:\Users\datho\PythonProjects\PakCalcs\3d Frame.TXT"
+#    file_path = r"C:\Users\datho\PythonProjects\PakCalcs\3d Frame.TXT"
+    file_path = r"C:\Users\DATaylor\Documents\Personal\PakCalcs\PakCalcs\3d Frame.TXT"
     parser = sgFileParser(file_path)
 #    print(parser.data)
 #    print(parser.units.get("LENGTH"))
