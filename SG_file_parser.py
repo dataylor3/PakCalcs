@@ -7,6 +7,7 @@ from collections import defaultdict
 from typing import Dict, Any
 import csv
 from io import StringIO
+from pprint import pprint
 
 
 class sgFileParser:
@@ -21,7 +22,7 @@ class sgFileParser:
         self.titles = {}
         self.combinations = {}
         self.design_members = {}
-        self.design_actions_parsed: Dict[int, Dict[int, Dict[int, Dict[str, float]]]] = defaultdict(lambda: defaultdict(dict))
+        self.design_actions_parsed: dict[int, dict[int, dict[int, dict[str, Quantity]]]] = {}
         self.VAL_KEYS = ["x", "Ax", "Vy", "Vz", "Mx", "My", "Mz"]
         self._parse(file_path)
         self.assign_k1()
@@ -86,41 +87,39 @@ class sgFileParser:
             self.combinations.setdefault(combo_id, {}).setdefault("primaries", []).append(primary_id)
 
     def handle_member_intermediate_forces_and_moments(self, section, line):
-        unit_strs = [self.units.get("LENGTH"),
-                     self.units.get("FORCE"),
-                     self.units.get("FORCE"),
-                     self.units.get("FORCE"),
-                     self.units.get("MOMENT"),
-                     self.units.get("MOMENT"),
-                     self.units.get("MOMENT")]
-        # Map a unit *string* to the corresponding si.<unit> variable
-        _name_to_unit = {
-            "m": si.m, "kN": kN, "kNm": kNm
-            }
+        unit_strs = [
+            self.units.get("LENGTH", "m"),
+            self.units.get("FORCE", "kN"),
+            self.units.get("FORCE", "kN"),
+            self.units.get("FORCE", "kN"),
+            self.units.get("MOMENT", "kNm"),
+            self.units.get("MOMENT", "kNm"),
+            self.units.get("MOMENT", "kNm"),
+        ]
+        _name_to_unit = {"m": si.m, "kN": kN, "kNm": kNm}
+
         parts = [p.strip() for p in line.split(",")]
         if len(parts) != 10:
-            #print(f'Wrong length: {len(parts)}')
-            return  # skip malformed/wrapped lines; adjust if your file wraps
+            return
+
         try:
-            clc = int(parts[0])
-            """
-            if clc == 12:
-                print("DEBUG: Processing line for clc=12:", line)
-            """
-            member = int(parts[1])
-            pos = int(parts[2])
-            vals = list(map(lambda s: round(float(s), 10), parts[3:]))  # x, Ax, Vy, Vz, Mx, My, Mz
-            quantities = [v * _name_to_unit[u] for v, u in zip(vals, unit_strs)]
-        except ValueError:
-            return  # skip malformed lines
-        
+            clc = int(parts[0])      # load case
+            member = int(parts[1])   # element id
+            pos = int(parts[2])      # position index
+            vals = [round(float(s), 10) for s in parts[3:]]  # x, Ax, Vy, Vz, Mx, My, Mz
+
+            # map unit strings to unit objects
+            units = [_name_to_unit[u] for u in unit_strs]
+            quantities = [v * u for v, u in zip(vals, units)]
+        except (ValueError, KeyError):
+            return
+
         if clc != 0:
-            """
-            if clc == 12:
-                print("DEBUG: Processing line for clc=12:", quantities)
-            """
-            self.design_actions_parsed[clc][member][pos] = dict(zip(self.VAL_KEYS, quantities))
-        
+            # ensure we have a plain dict at each level
+            lvl1 = self.design_actions_parsed.setdefault(clc, {})
+            lvl2 = lvl1.setdefault(member, {})
+            lvl2[pos] = dict(zip(self.VAL_KEYS, quantities))
+    
     def handle_steelmembers(self, section, line):
         """
         Example line: "1,"Rafter 1","13,21,5,16",N,R,C,AG  ,Y,   1.000000    ,N,Y,   1.000000    ,N,Y,   1.000000    ,   1.000000    ,"",FF,"",FF, ,C,Y,W,   0,   20.00000    ,0,0,0,0"
@@ -178,13 +177,13 @@ if __name__ == "__main__":
 #    print(parser.units.get("LENGTH"))
 #    print(parser.units.get("FORCE"))
 #    print(parser.units.get("MOMENT"))
-#    print(parser.titles)
-#    print(parser.titles)
-#    print(dict(parser.design_actions_parsed))
+    print(parser.titles)
+#    print(parser.combinations)
+#    pprint(dict(parser.design_actions_parsed))
 #    print(json.dumps(parser.design_actions_parsed, indent=2))
     """    
     for k, v in parser.design_actions_parsed.items():
         print("KEY:", k)
         print("VALUE:", v)   # this will crash on the problematic one
     """
-    print("Design Members:", parser.design_members)
+#    print("Design Members:", parser.design_members)
