@@ -1,9 +1,12 @@
 import json
 import re
 import forallpeople as si
+from pyparsing import line
 si.environment("mystructural", top_level=True)
 from collections import defaultdict
 from typing import Dict, Any
+import csv
+from io import StringIO
 
 
 class sgFileParser:
@@ -17,6 +20,7 @@ class sgFileParser:
         self.units = {}
         self.titles = {}
         self.combinations = {}
+        self.design_members = {}
         self.design_actions_parsed: Dict[int, Dict[int, Dict[int, Dict[str, float]]]] = defaultdict(lambda: defaultdict(dict))
         self.VAL_KEYS = ["x", "Ax", "Vy", "Vz", "Mx", "My", "Mz"]
         self._parse(file_path)
@@ -99,22 +103,44 @@ class sgFileParser:
             return  # skip malformed/wrapped lines; adjust if your file wraps
         try:
             clc = int(parts[0])
+            """
             if clc == 12:
                 print("DEBUG: Processing line for clc=12:", line)
+            """
             member = int(parts[1])
             pos = int(parts[2])
             vals = list(map(lambda s: round(float(s), 10), parts[3:]))  # x, Ax, Vy, Vz, Mx, My, Mz
             quantities = [v * _name_to_unit[u] for v, u in zip(vals, unit_strs)]
         except ValueError:
             return  # skip malformed lines
+        
         if clc != 0:
+            """
             if clc == 12:
                 print("DEBUG: Processing line for clc=12:", quantities)
-
+            """
             self.design_actions_parsed[clc][member][pos] = dict(zip(self.VAL_KEYS, quantities))
-#        print(json.dumps(self.design_actions_parsed, indent=2))
         
+    def handle_steelmembers(self, section, line):
+        """
+        Example line: "1,"Rafter 1","13,21,5,16",N,R,C,AG  ,Y,   1.000000    ,N,Y,   1.000000    ,N,Y,   1.000000    ,   1.000000    ,"",FF,"",FF, ,C,Y,W,   0,   20.00000    ,0,0,0,0"
+        Only need to extract the design member ID, the design member's name and the list of elements, the first 3 fields.
+        """
+        reader = csv.reader(StringIO(line), skipinitialspace=True)
+        row = next(reader, None)
+        if not row or len(row) < 3:
+            return None  # or raise ValueError("Malformed line")
+        row = [cell.strip() if cell is not None else cell for cell in row]
 
+        try:
+            self.design_members = {
+            "member_id": int(row[0]),
+            "member_name": row[1],
+            "element_list": [int(x) for x in row[2].split(",")] if row[2] else []
+            }
+        except ValueError:
+            pass  # skip malformed lines
+    
     def handle_generic(self, section, line):
         """Fallback handler for simple key=value pairs."""
         pass
@@ -158,11 +184,7 @@ if __name__ == "__main__":
 #    print(json.dumps(parser.design_actions_parsed, indent=2))
     """    
     for k, v in parser.design_actions_parsed.items():
-        try:
-            print(k, v)
-        except Exception as e:
-            print("ERROR on key:", k, "->", e)
-    """
-    for k, v in parser.design_actions_parsed.items():
         print("KEY:", k)
         print("VALUE:", v)   # this will crash on the problematic one
+    """
+    print("Design Members:", parser.design_members)
