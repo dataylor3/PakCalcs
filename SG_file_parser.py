@@ -22,7 +22,7 @@ class sgFileParser:
         self.titles = {}
         self.combinations = {}
         self.design_members = {}
-        self.design_actions_parsed: dict[int, dict[int, dict[int, dict[str, Quantity]]]] = {}
+        self.design_actions_parsed: dict[int, dict[int, dict[int, dict[str, Any]]]] = {}
         self.VAL_KEYS = ["x", "Ax", "Vy", "Vz", "Mx", "My", "Mz"]
         self._parse(file_path)
         self.assign_k1()
@@ -132,8 +132,8 @@ class sgFileParser:
         row = [cell.strip() if cell is not None else cell for cell in row]
 
         try:
-            self.design_members = {
-            "member_id": int(row[0]),
+            self.design_members[int(row[0])] = {
+            #"member_id": int(row[0]),
             "member_name": row[1],
             "element_list": [int(x) for x in row[2].split(",")] if row[2] else []
             }
