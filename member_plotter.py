@@ -28,14 +28,14 @@ class MemberPlotter:
             for x_global, lc_dict in x_dict.items():
 
                 # Convert x using forallpeople .as()
-                x_val = x_global.as(self.x_unit)
+                x_val = x_global.m_as(self.x_unit)
 
                 for load_case, actions in lc_dict.items():
                     for action_name, action_value in actions.items():
 
                         # Skip if no unit conversion defined
                         if action_name in self.action_units:
-                            z_val = action_value.as(self.action_units[action_name])
+                            z_val = action_value.m_as(self.action_units[action_name])
                         else:
                             # fallback: raw magnitude
                             z_val = action_value.m
