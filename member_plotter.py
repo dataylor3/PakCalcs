@@ -28,17 +28,24 @@ class MemberPlotter:
             for x_global, lc_dict in x_dict.items():
 
                 # Convert x using forallpeople .as()
-                x_val = (x_global.to(self.x_unit)).value
+                #print(f"Converting x_global for element {element}: {x_global}")
+                #print(f"Original unit: {x_global.to(self.x_unit).value} {self.x_unit}")
+                x_val = x_global.value
 
                 for load_case, actions in lc_dict.items():
                     for action_name, action_value in actions.items():
 
                         # Skip if no unit conversion defined
-                        if action_name in self.action_units:
-                            z_val = (action_value.to(self.action_units[action_name])).value
-                        else:
+                        #if action_name in self.action_units:
+                            #print(f"Converting {action_name} for element {element}, load case {load_case}")
+                            #print(f"Original value: {action_value}")
+                            #print(f"Original value.value: {action_value.value}")
+                            #print(f"Original value.float: {float(action_value)}")
+                            #print(f"Converted value: {float(action_value.value/1000)}")
+                        z_val = (action_value.value/1000)
+                        #else:
                             # fallback: raw magnitude
-                            z_val = action_value.value
+                        #    z_val = action_value.value
 
                         rows.append({
                             "element": element,
@@ -73,6 +80,8 @@ class MemberPlotter:
                 z=[r["value"] for r in lc_rows],
                 mode="lines+markers",
                 name=f"LC {lc}",
+                marker=dict(size=2, opacity=0.8),
+                line=dict(width=2),
             ))
 
         # Axis labels with units

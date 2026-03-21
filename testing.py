@@ -12,21 +12,22 @@ from member_design_actions import MemberDesignActions
 from pprint import pprint
 from member_plotter import MemberPlotter
 
-results = sgFileParser(r"C:\Users\DATaylor\Documents\Personal\PakCalcs\PakCalcs\3d Frame 260317.TXT")
+#results = sgFileParser(r"C:\Users\DATaylor\Documents\Personal\PakCalcs\PakCalcs\3d Frame 260317.TXT")
+results = sgFileParser(r"3d Frame 260317.TXT")
 
 rafter1 = DesignMember.build_many(results.design_members)
 #print((list(rafter1)))
 
-des_act = MemberDesignActions(list(rafter1[0].element_list), [11,12,13,14,15], results.design_actions_parsed)
-pprint(des_act.globalized)
+des_act = MemberDesignActions(list(rafter1[0].element_list), [11,12,13,14,15,16], results.design_actions_parsed)
+#pprint(des_act.globalized)
 
 action_units = {
-    "Ax": "N",
-    "Vy": "N",
-    "Vz": "N",
-    "Mx": "N·m",
-    "My": "N·m",
-    "Mz": "N·m",
+    "Ax": "kN",
+    "Vy": "kN",
+    "Vz": "kN",
+    "Mx": "kN·m",
+    "My": "kN·m",
+    "Mz": "kN·m",
 }
 plotter = MemberPlotter(des_act.globalized, action_units=action_units)
 
