@@ -30,5 +30,5 @@ action_units = {
 }
 plotter = MemberPlotter(des_act.globalized, action_units=action_units)
 
-fig = plotter.plot_3d(action="Mz")
+fig = plotter.plot_3d(action="Vz")
 fig.show()
