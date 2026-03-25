@@ -42,6 +42,7 @@ class MemberPlotter:
                             #print(f"Original value.value: {action_value.value}")
                             #print(f"Original value.float: {float(action_value)}")
                             #print(f"Converted value: {float(action_value.value/1000)}")
+                        print(f"Action {action_name} for element {element}, load case {load_case}: {action_value.split()} (type: {type(action_value)})")
                         z_val = (action_value.value/1000)
                         #else:
                             # fallback: raw magnitude
@@ -85,6 +86,7 @@ class MemberPlotter:
             ))
 
         # Axis labels with units
+        #print(self.actionvalue.split())
         z_unit = self.action_units.get(action, "")
 
         fig.update_layout(

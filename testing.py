@@ -13,8 +13,8 @@ from pprint import pprint
 from member_plotter import MemberPlotter
 from timberClasses import beamDesign
 
-#results = sgFileParser(r"C:\Users\DATaylor\Documents\Personal\PakCalcs\PakCalcs\3d Frame 260317.TXT")
-results = sgFileParser(r"3d Frame 260317.TXT")
+results = sgFileParser(r"C:\Users\DATaylor\Documents\Personal\PakCalcs\PakCalcs\3d Frame 260317.TXT")
+#results = sgFileParser(r"3d Frame 260317.TXT")
 #print(results.units)
 
 members = DesignMember.build_many(results.design_members)
