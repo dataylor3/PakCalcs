@@ -6,6 +6,40 @@ import json
 from typing import Dict, Callable, Optional
 import loadClasses as lc
 
+class Section:
+    def __init__(self, name:str, d:si.Physical, b:si.Physical, rho_b:float):
+        self.name = name
+        self.d = d
+        self.b = b
+        self.rho_b = rho_b
+
+    @property
+    def Z_x(self):
+        return (self.b*self.d**2)/6  # Section modulus for rectangular section
+    
+    @property
+    def Z_y(self):
+        return (self.d*self.b**2)/6  # Section modulus for rectangular section
+    
+    @property
+    def cont_res_limit(self):
+        return self.d*64*(self.b/(self.rho_b*self.d))**2
+
+
+class Restraints:
+    def __init__(self, L_ayT:si.Physical, L_ayB:si.Physical, L_aphaT:si.Physical, L_aphaB:si.Physical, cont_res_limit:si.Physical):
+        self.L_ayT = L_ayT
+        self.L_ayB = L_ayB
+        self.L_aphaT = L_aphaT
+        self.L_aphaB = L_aphaB
+        self.cont_res_limit = cont_res_limit
+
+    def top_is_continuous(self):
+        return self.L_ayT <= self.cont_res_limit
+    
+    def bottom_is_continuous(self):
+        return self.L_ayB <= self.cont_res_limit
+
 
 class beamDesign():
     def __init__(self, d:si.Physical, b:si.Physical, L:si.Physical,
@@ -40,9 +74,9 @@ class beamDesign():
         self.L_aphaT = L_aphaT
         self.L_aphaB = L_aphaB
         self.rho_b = rho_b
-        self.cont_res_limit = self.d*64*(self.b/(self.rho_b*self.d))**2
-        self.Z_x = (b*d**2)/6  # Section modulus for rectangular section
-        self.Z_y = (d*b**2)/6  # Section modulus for rectangular section
+        #self.cont_res_limit = self.d*64*(self.b/(self.rho_b*self.d))**2
+        #self.Z_x = (b*d**2)/6  # Section modulus for rectangular section
+        #self.Z_y = (d*b**2)/6  # Section modulus for rectangular section
         self.f_prime_b = f_prime_b
         self.k_4 = k_4
         self.k_6 = k_6
@@ -52,6 +86,18 @@ class beamDesign():
         # self.designActions = designActions
         # self.material = material
 
+    @property
+    def cont_res_limit(self):
+        return self.d*64*(self.b/(self.rho_b*self.d))**2
+    """
+    @property
+    def Z_x(self):
+        return (self.b*self.d**2)/6  # Section modulus for rectangular section
+    
+    @property
+    def Z_y(self):
+        return (self.d*self.b**2)/6  # Section modulus for rectangular section
+    """
     @property
     def S_1Sag(self):
         if self.L_ayT <= self.cont_res_limit: # Continuous restraint to top/compression edge

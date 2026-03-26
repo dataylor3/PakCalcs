@@ -13,25 +13,18 @@ from pprint import pprint
 from member_plotter import MemberPlotter
 from timberClasses import beamDesign
 
-results = sgFileParser(r"C:\Users\DATaylor\Documents\Personal\PakCalcs\PakCalcs\3d Frame 260317.TXT")
-#results = sgFileParser(r"3d Frame 260317.TXT")
+#results = sgFileParser(r"C:\Users\DATaylor\Documents\Personal\PakCalcs\PakCalcs\3d Frame 260317.TXT")
+results = sgFileParser(r"3d Frame 260317.TXT")
 #print(results.units)
 
 members = DesignMember.build_many(results.design_members)
 #print((list(members[0])))
 
-des_act = MemberDesignActions(list(members[1].element_list), [11], results.design_actions_parsed)
-pprint(des_act.globalized)
+des_act = MemberDesignActions(list(members[0].element_list), [11,12,13,14,15,16], results.design_actions_parsed)
+#pprint(des_act.globalized)
 
-action_units = {
-    "Ax": results.units.get("FORCE"),
-    "Vy": results.units.get("FORCE"),
-    "Vz": results.units.get("FORCE"),
-    "Mx": results.units.get("MOMENT"),
-    "My": results.units.get("MOMENT"),
-    "Mz": results.units.get("MOMENT"),
-}
-plotter = MemberPlotter(des_act.globalized, action_units=action_units)
+#plotter = MemberPlotter(des_act.globalized, action_units=action_units)
+plotter = MemberPlotter(des_act.globalized)
 
-fig = plotter.plot_3d(action="Vz")
+fig = plotter.plot_3d(action="Mz")
 fig.show()

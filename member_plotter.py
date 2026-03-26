@@ -2,6 +2,7 @@ import plotly.graph_objects as go
 import forallpeople as si
 # Load SI base + derived units
 si.environment("mystructural", top_level=True)
+from pprint import pprint
 
 
 class MemberPlotter:
@@ -16,7 +17,18 @@ class MemberPlotter:
         """
         self.data = globalised_data
         self.x_unit = x_unit
-        self.action_units = action_units or {}
+        self.action_units = self.extract_action_units(globalised_data)
+
+    @staticmethod
+    def extract_action_units(data):
+        units = {}
+        for element_dict in data.values():
+            for x_global_dict in element_dict.values():
+                for actions in x_global_dict.values():
+                    for name, qty in actions.items():
+                        units[name] = "k"+str(qty.split()[1])[6:]  # e.g. "kN", "kNm"
+
+        return units
 
     # ---------------------------------------------------------
     # INTERNAL: flatten into tidy rows for Plotly
@@ -26,28 +38,10 @@ class MemberPlotter:
 
         for element, x_dict in self.data.items():
             for x_global, lc_dict in x_dict.items():
-
-                # Convert x using forallpeople .as()
-                #print(f"Converting x_global for element {element}: {x_global}")
-                #print(f"Original unit: {x_global.to(self.x_unit).value} {self.x_unit}")
                 x_val = x_global.value
-
                 for load_case, actions in lc_dict.items():
                     for action_name, action_value in actions.items():
-
-                        # Skip if no unit conversion defined
-                        #if action_name in self.action_units:
-                            #print(f"Converting {action_name} for element {element}, load case {load_case}")
-                            #print(f"Original value: {action_value}")
-                            #print(f"Original value.value: {action_value.value}")
-                            #print(f"Original value.float: {float(action_value)}")
-                            #print(f"Converted value: {float(action_value.value/1000)}")
-                        print(f"Action {action_name} for element {element}, load case {load_case}: {action_value.split()} (type: {type(action_value)})")
                         z_val = (action_value.value/1000)
-                        #else:
-                            # fallback: raw magnitude
-                        #    z_val = action_value.value
-
                         rows.append({
                             "element": element,
                             "x": x_val,
@@ -55,7 +49,6 @@ class MemberPlotter:
                             "action": action_name,
                             "value": z_val,
                         })
-
         return rows
 
     # ---------------------------------------------------------
@@ -86,7 +79,6 @@ class MemberPlotter:
             ))
 
         # Axis labels with units
-        #print(self.actionvalue.split())
         z_unit = self.action_units.get(action, "")
 
         fig.update_layout(
