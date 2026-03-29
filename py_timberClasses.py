@@ -4,7 +4,7 @@ from math import pi
 import re
 import json
 from typing import Dict, Callable, Optional
-import loadClasses as lc
+import py_loadClasses as lc
 
 class Section:
     def __init__(self, name:str, d:si.Physical, b:si.Physical, rho_b:float):
@@ -27,30 +27,30 @@ class Section:
 
 
 class Restraints:
-    def __init__(self, L_ayT:si.Physical, L_ayB:si.Physical, L_aphaT:si.Physical, L_aphaB:si.Physical, cont_res_limit:si.Physical):
+    def __init__(self, L_ayT:si.Physical, L_ayB:si.Physical, L_alphaT:si.Physical, L_alphaB:si.Physical, cont_res_limit:si.Physical):
         self.L_ayT = L_ayT
         self.L_ayB = L_ayB
-        self.L_aphaT = L_aphaT
-        self.L_aphaB = L_aphaB
+        self.L_alphaT = L_alphaT
+        self.L_alphaB = L_alphaB
         self.cont_res_limit = cont_res_limit
 
+    @property
     def top_is_continuous(self):
         return self.L_ayT <= self.cont_res_limit
-    
+    @property
     def bottom_is_continuous(self):
         return self.L_ayB <= self.cont_res_limit
 
 
-class beamDesign():
-    def __init__(self, d:si.Physical, b:si.Physical, L:si.Physical,
-                  L_ayT:si.Physical, L_ayB:si.Physical, L_aphaT:si.Physical,
-                    L_aphaB:si.Physical, rho_b:float, f_prime_b:si.Physical,
+class beamDesign:
+    def __init__(self, section: Section, restraints: Restraints,
+                   f_prime_b:si.Physical,
                       phi:float = 0.95, k_4:float = 1.0, k_6:float = 1.0,
-                        k_9:float = 1.0, loading:lc.loading = None):
+                        k_9:float = 1.0 ):
         """
         Parameters
-        d: Depth of the beam
-        b: Width of the beam
+        section: The cross-sectional properties of the beam
+        restraints: The lateral and torsional restraints of the beam
         L: Span of the beam
         L_ayT: Spacing of discrete lateral restraints on the top of the beam
         L_ayB: Spacing of discrete lateral restraints on the bottom of the beam
@@ -66,30 +66,23 @@ class beamDesign():
         """
 
         self.phi = phi
-        self.d = d
-        self.b = b
-        self.L = L
-        self.L_ayT = L_ayT
-        self.L_ayB = L_ayB
-        self.L_aphaT = L_aphaT
-        self.L_aphaB = L_aphaB
-        self.rho_b = rho_b
-        #self.cont_res_limit = self.d*64*(self.b/(self.rho_b*self.d))**2
-        #self.Z_x = (b*d**2)/6  # Section modulus for rectangular section
-        #self.Z_y = (d*b**2)/6  # Section modulus for rectangular section
+        self.section = section
+        self.restraints = restraints
+        #self.L = L
+        self.rho_b = section.rho_b
         self.f_prime_b = f_prime_b
         self.k_4 = k_4
         self.k_6 = k_6
         self.k_9 = k_9
-        self.loading = loading
+        
 
-        # self.designActions = designActions
+        
         # self.material = material
 
+    """
     @property
     def cont_res_limit(self):
         return self.d*64*(self.b/(self.rho_b*self.d))**2
-    """
     @property
     def Z_x(self):
         return (self.b*self.d**2)/6  # Section modulus for rectangular section
@@ -98,6 +91,55 @@ class beamDesign():
     def Z_y(self):
         return (self.d*self.b**2)/6  # Section modulus for rectangular section
     """
+    
+    def _S1_helper(self,
+                comp_continuous, tens_continuous,
+                comp_Lay, tens_Lay, tens_Lalpha):
+        d = self.section.d
+        b = self.section.b
+
+        # --- Compression flange ---
+        if comp_continuous:
+            S_comp = 0.0
+        else:
+            S_comp = 1.25 * (d/b) * (comp_Lay/d)**0.5
+
+        # --- Tension flange ---
+        if tens_continuous:
+            S_tens = 2.25 * d/b
+        else:
+            S_t1 = (d/b)**1.35 * (tens_Lay/d)**0.25
+            S_t2 = 1.5 * d/b / ((pi*d/tens_Lalpha)**2 + 0.4)**0.5
+            S_tens = min(S_t1, S_t2)
+
+        return min(S_comp, S_tens)
+
+    @property
+    def S_1Sag(self):
+        R = self.restraints
+
+        return self._S1_helper(
+            comp_continuous = R.top_is_continuous,
+            tens_continuous = R.bottom_is_continuous,
+
+            comp_Lay = R.L_ayT,
+            tens_Lay = R.L_ayB,
+            tens_Lalpha = R.L_alphaT,   # torsional restraint to compression edge
+        )
+
+    @property        
+    def S_1Hog(self):
+        R = self.restraints
+
+        return self._S1_helper(
+            comp_continuous = R.bottom_is_continuous,
+            tens_continuous = R.top_is_continuous,
+
+            comp_Lay = R.L_ayB,
+            tens_Lay = R.L_ayT,
+            tens_Lalpha = R.L_alphaB,   # torsional restraint to compression edge
+        )
+    """            
     @property
     def S_1Sag(self):
         if self.L_ayT <= self.cont_res_limit: # Continuous restraint to top/compression edge
@@ -137,7 +179,7 @@ class beamDesign():
             s_bottom = 1.25*(self.d/self.b)*(self.L_ayB/self.d)**0.5
             #print(f's_bottom hog case 2: {s_bottom}')
         return min(s_top, s_bottom)
-
+    """
     def k_12(self, S_1:float):
         #print(f'S_1: {S_1}')
         if self.rho_b*S_1 <=10:

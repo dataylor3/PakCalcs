@@ -1,14 +1,20 @@
-from SG_file_parser import sgFileParser
+from py_SG_file_parser import sgFileParser
 from pprint import pprint
+from py_ActionData import ActionData
+from py_LoadCase import LoadCase
+from py_design_member import DesignMember
 
 class MemberDesignActions:
-    def __init__(self, elements:list, load_cases:list, all_design_actions: dict):
+    def __init__(self, elements:list, load_cases:list, all_design_actions: dict, lc_titles: dict ):
         self.elements = elements
         self.load_cases = load_cases
         self.all_design_actions = all_design_actions
+        self.lc_titles = lc_titles
+        #self.load_case_details = load_case_details
         self.filtered = self.filter_design_actions()
         self.pivot = self.pivot_to_element_x_loadcase(self.filtered)
         self.globalized = self.make_x_global(self.pivot, self.elements)
+        self.design_action_data = self.to_load_cases(self.lc_titles)
 
     def filter_design_actions(self):
         """
@@ -81,14 +87,75 @@ class MemberDesignActions:
 
         return new
 
+    def to_action_data(self):
+        # Prepare empty lists for each load case
+        load_case_data = {
+            lc: {"x": [], "Mz": [], "My": [], "Vy": [], "Vz": [], "Ax": []}
+            for lc in self.load_cases
+        }
 
+        # Loop through globalised structure
+        for element, x_dict in self.globalized.items():
+            for x_global, lc_dict in x_dict.items():
+                for lc, actions in lc_dict.items():
+                    load_case_data[lc]["x"].append(x_global)
+                    load_case_data[lc]["Mz"].append(actions["Mz"])
+                    load_case_data[lc]["My"].append(actions["My"])
+                    load_case_data[lc]["Vy"].append(actions["Vy"])
+                    load_case_data[lc]["Vz"].append(actions["Vz"])
+                    load_case_data[lc]["Ax"].append(actions["Ax"])
 
+        # Convert each load case into an ActionData object
+        action_objects = {}
+        for lc, arrays in load_case_data.items():
+            action_objects[lc] = ActionData(
+                x=arrays["x"],
+                Mz=arrays["Mz"],
+                My=arrays["My"],
+                Vy=arrays["Vy"],
+                Vz=arrays["Vz"],
+                Ax=arrays["Ax"],
+            )
 
+        return action_objects
+
+    def to_load_cases(self, load_case_details: dict):
+        """
+        load_case_details: dict like
+            {1: {'k1': 0.57, 'title': 'Dead Load'}, ...}
+        """
+
+        action_data = self.to_action_data()
+        load_cases = []
+
+        for lc_id in self.load_cases:
+            details = load_case_details[lc_id]
+
+            lc = LoadCase(
+                id=lc_id,
+                title=details["title"],
+                K1=details["k1"],
+                actions=action_data[lc_id]
+            )
+
+            load_cases.append(lc)
+
+        return load_cases
 
 if __name__ == "__main__":
-    file_path = r"C:\Users\datho\PythonProjects\PakCalcs\3d Frame.TXT"
+    file_path = r"C:\Users\datho\PythonProjects\PakCalcs\3d Frame 260317.TXT"
 #    file_path = r"C:\Users\DATaylor\Documents\Personal\PakCalcs\PakCalcs\3d Frame.TXT"
     parser = sgFileParser(file_path)
-    des_act = MemberDesignActions([13,21,5,16], [11,12,13], parser.design_actions_parsed)
-    pprint(des_act.globalized)
+    
+    members = DesignMember.build_many(parser.design_members)
+    #print((list(members[0])))
+
+    des_act = MemberDesignActions(list(members[0].element_list), [11, 12, 13, 14, 15, 16], parser.design_actions_parsed, parser.titles)
+    for lc in des_act.design_action_data:
+        print("Load Case ID:", lc.id)
+        print("Load Case:", lc.title)
+        print("K1:", lc.K1)
+        print("Actions Mz:", lc.actions.Mz)
+        print("Actions x:", lc.actions.x)
+    #pprint(des_act.max_moment())
 

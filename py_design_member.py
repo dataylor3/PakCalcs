@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Tuple, Optional
+from typing import List, Tuple, Optional
 
 @dataclass
 class DesignMember:
@@ -19,3 +19,4 @@ class DesignMember:
     @classmethod
     def build_many(cls, outer: dict[str, dict]) -> list["DesignMember"]:
         return [cls.from_item(k, v) for k, v in outer.items()]
+    

@@ -3,7 +3,7 @@ import math
 import pytest
 
 # Import the class and the forallpeople environment from the module under test
-import timberClasses as tc
+import py_timberClasses as tc
 
 # Ensure units are available (module sets environment to 'mystructural')
 si = tc.si

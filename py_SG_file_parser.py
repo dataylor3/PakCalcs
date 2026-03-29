@@ -177,10 +177,10 @@ if __name__ == "__main__":
 #    print(parser.units.get("LENGTH"))
 #    print(parser.units.get("FORCE"))
 #    print(parser.units.get("MOMENT"))
-#    print(parser.titles)
+    print(parser.titles)
 #    print(parser.combinations)
 #    pprint(dict(parser.design_actions_parsed))
-    pprint((parser.design_actions_parsed))
+    #pprint((parser.design_actions_parsed))
     """    
     for k, v in parser.design_actions_parsed.items():
         print("KEY:", k)
