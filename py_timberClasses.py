@@ -67,9 +67,9 @@ class beamDesign:
 
         self.phi = phi
         self.section = section
+        self.rho_b = section.rho_b
         self.restraints = restraints
         #self.L = L
-        self.rho_b = section.rho_b
         self.f_prime_b = f_prime_b
         self.k_4 = k_4
         self.k_6 = k_6
@@ -198,7 +198,7 @@ class beamDesign:
         return self.k_12(self.S_1Hog)
     
     def M_d(self, k_1:float, k_12:float):
-        return self.phi*k_1*self.k_4*self.k_6*self.k_9*k_12*self.f_prime_b*self.Z_x
+        return self.phi*k_1*self.k_4*self.k_6*self.k_9*k_12*self.f_prime_b*self.section.Z_x
 
     @property
     def M_d5secSag(self):
