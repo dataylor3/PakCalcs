@@ -3,6 +3,9 @@ from pprint import pprint
 from py_ActionData import ActionData
 from py_LoadCase import LoadCase
 from py_design_member import DesignMember
+from py_timberClasses import beamDesign, Section, Restraints
+import forallpeople as si
+si.environment("mystructural", top_level=True)
 
 class MemberDesignActions:
     def __init__(self, elements:list, load_cases:list, all_design_actions: dict, lc_titles: dict ):
@@ -151,6 +154,16 @@ if __name__ == "__main__":
     #print((list(members[0])))
 
     des_act = MemberDesignActions(list(members[0].element_list), [11, 12, 13, 14, 15, 16], parser.design_actions_parsed, parser.titles)
+    rafter_section = Section(name="rafter", d=190*mm, b=45*mm, rho_b=0.5)
+    rafter_restraints = Restraints(L_ayT=4200*mm, L_ayB=4200*mm, L_alphaT=4200*mm, L_alphaB=4200*mm, cont_res_limit=rafter_section.cont_res_limit)
+    rafter = beamDesign(section=rafter_section, restraints=rafter_restraints,
+                   f_prime_b=8*MPa,)
+    
+    rafterMd, rafterUtil = rafter.checkM_dx(k1=0.57, M_starx=-1.173*kNm)
+    print(rafterMd)
+    print(rafterUtil)
+
+    """
     for lc in des_act.design_action_data:
         print("Load Case ID:", lc.id)
         print("Load Case:", lc.title)
@@ -158,4 +171,4 @@ if __name__ == "__main__":
         print("Actions Mz:", lc.actions.Mz)
         print("Actions x:", lc.actions.x)
     #pprint(des_act.max_moment())
-
+    """

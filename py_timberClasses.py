@@ -189,6 +189,16 @@ class beamDesign:
         else:
             return 200/(self.rho_b*S_1)**2
 
+    def checkM_dx(self, k1:float, M_starx:si.Physical):
+        if M_starx < 0.0*Nm:
+            S_1 = self.S_1Hog
+        else:
+            S_1 = self.S_1Sag
+        k_12 = self.k_12(S_1)
+        M_dx = self.M_d(k1, k_12, self.section.Z_x)
+        UtilRatio = M_starx / M_dx
+        return M_dx, UtilRatio
+
     @property
     def k_12Sag(self):
         return self.k_12(self.S_1Sag)
@@ -197,8 +207,8 @@ class beamDesign:
     def k_12Hog(self):
         return self.k_12(self.S_1Hog)
     
-    def M_d(self, k_1:float, k_12:float):
-        return self.phi*k_1*self.k_4*self.k_6*self.k_9*k_12*self.f_prime_b*self.section.Z_x
+    def M_d(self, k_1:float, k_12:float, Z:si.Physical):
+        return self.phi*k_1*self.k_4*self.k_6*self.k_9*k_12*self.f_prime_b*Z
 
     @property
     def M_d5secSag(self):
@@ -265,7 +275,7 @@ class beamDesign:
 if __name__ == "__main__":
     # Example usage
     #file_path = r""
-    file_path = r"C:\Users\datho\PythonProjects\PakCalcs\3d Frame.TXT"
+    file_path = r"C:\Users\datho\PythonProjects\PakCalcs\3d Frame 260317.TXT"
     member_loading = lc.loading(file_path)
     beam = beamDesign(d=190*mm, b=45*mm, L=4.2*m,
                         L_ayT=300*mm, L_ayB=2100*mm,
