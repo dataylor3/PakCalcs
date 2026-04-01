@@ -111,6 +111,7 @@ class sgFileParser:
             # map unit strings to unit objects
             units = [_name_to_unit[u] for u in unit_strs]
             quantities = [v * u for v, u in zip(vals, units)]
+            #print(f"Parsed line for load case {clc}, member {member}, position {pos}: {quantities}")
         except (ValueError, KeyError):
             return
 
@@ -119,6 +120,7 @@ class sgFileParser:
             lvl1 = self.design_actions_parsed.setdefault(clc, {})
             lvl2 = lvl1.setdefault(member, {})
             lvl2[pos] = dict(zip(self.VAL_KEYS, quantities))
+            #lvl2[pos] = {k: str(q) for k, q in zip(self.VAL_KEYS, quantities)}
     
     def handle_steelmembers(self, section, line):
         """
@@ -170,8 +172,10 @@ class sgFileParser:
                 self.titles[lc_num]["k1"] = max_k1
 
 if __name__ == "__main__":
-#    file_path = r"C:\Users\datho\PythonProjects\PakCalcs\3d Frame.TXT"
-    file_path = r"C:\Users\DATaylor\Documents\Personal\PakCalcs\PakCalcs\3d Frame.TXT"
+    try:
+        file_path = r"C:\Users\datho\PythonProjects\PakCalcs\3d Frame.TXT"
+    except:
+        file_path = r"C:\Users\DATaylor\Documents\Personal\PakCalcs\PakCalcs\3d Frame.TXT"
     parser = sgFileParser(file_path)
 #    print(parser.data)
 #    print(parser.units.get("LENGTH"))
@@ -181,9 +185,13 @@ if __name__ == "__main__":
 #    print(parser.combinations)
     pprint(dict(parser.design_actions_parsed))
     #pprint((parser.design_actions_parsed))
-    """    
+        
     for k, v in parser.design_actions_parsed.items():
         print("KEY:", k)
+        print("Type VALUE:", type(v))
         print("VALUE:", v)   # this will crash on the problematic one
-    """
+
+    for k, v in parser.design_actions_parsed.items():
+        print(k, type(v))
+    
 #    print("Design Members:", parser.design_members)

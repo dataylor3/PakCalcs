@@ -146,20 +146,22 @@ class MemberDesignActions:
         return load_cases
 
 if __name__ == "__main__":
-#    file_path = r"C:\Users\datho\PythonProjects\PakCalcs\3d Frame 260317.TXT"
-    file_path = r"C:\Users\DATaylor\Documents\Personal\PakCalcs\PakCalcs\3d Frame.TXT"
+    try:
+        file_path = r"C:\Users\datho\PythonProjects\PakCalcs\3d Frame 260317.TXT"
+    except:
+        file_path = r"C:\Users\DATaylor\Documents\Personal\PakCalcs\PakCalcs\3d Frame 260317.TXT"
     parser = sgFileParser(file_path)
     
     members = DesignMember.build_many(parser.design_members)
     #print((list(members[0])))
 
-    des_act = MemberDesignActions(list(members[0].element_list), [11, 12, 13, 14, 15, 16], parser.design_actions_parsed, parser.titles)
-    rafter_section = Section(name="rafter", d=190*mm, b=35*mm, rho_b=0.87)
+    des_act = MemberDesignActions(list(members[0].element_list), [11,12,13,14,15,16], parser.design_actions_parsed, parser.titles)
+    rafter_section = Section(name="rafter", d=140*mm, b=35*mm, rho_b=0.87)
     rafter_restraints = Restraints(L_ayT=200*mm, L_ayB=4200*mm, L_alphaT=4200*mm, L_alphaB=4200*mm, cont_res_limit=rafter_section.cont_res_limit)
     rafter = beamDesign(section=rafter_section, restraints=rafter_restraints,
                    f_prime_b=8*MPa,)
     
-    rafterMd, rafterUtil = rafter.checkM_dx(k1=0.57, M_starx=-1.173*kNm)
+    rafterMd, rafterUtil = rafter.checkM_dx(k1=0.57, M_starxin=-1.173*Nm)
     print(f"Capacity: {rafterMd} Utilization: {rafterUtil}")
 
 
@@ -168,11 +170,11 @@ if __name__ == "__main__":
         print("Load Case ID:", lc.id)
         print("Load Case:", lc.title)
         print("K1:", lc.K1)
-        print("Actions Mz:", lc.actions.Mz)
-        print("Actions x:", lc.actions.x)
+        #print("Actions Mz:", (lc.actions.Mz))  # print first 5 for brevity
+        #print("Actions x:", (lc.actions.x))
         k1 = lc.K1
         for point in lc.actions.Mz:
-            rafterMd, rafterUtil = rafter.checkM_dx(k1=k1, M_starx=point.value)
-            print(f"Capacity: {rafterMd} Utilization: {rafterUtil}")
+            rafterMd, rafterUtil = rafter.checkM_dx(k1=k1, M_starxin=point)
+            print(f"Capacity: {rafterMd} Action: {point} Utilization: {rafterUtil}")
     #pprint(des_act.max_moment())
     

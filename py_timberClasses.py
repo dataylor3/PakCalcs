@@ -189,14 +189,17 @@ class beamDesign:
         else:
             return 200/(self.rho_b*S_1)**2
 
-    def checkM_dx(self, k1:float, M_starx:si.Physical):
-        #M_starx = (str(M_starx).strip('·'))
+    def checkM_dx(self, k1:float, M_starxin:si.Physical):
+        #print("M_staxin type", type(M_starxin), M_starxin)
+        M_starx = (M_starxin)
+        #print(type(M_starx), M_starx)
         if M_starx < 0.0*Nm:
             S_1 = self.S_1Hog
         else:
             S_1 = self.S_1Sag
         k_12 = self.k_12(S_1)
         M_dx = self.M_d(k1, k_12, self.section.Z_x)
+        #print(type(M_dx), M_dx, type(M_starx), M_starx)
         UtilRatio = M_starx / M_dx
         return M_dx, UtilRatio
 
