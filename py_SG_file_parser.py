@@ -170,8 +170,8 @@ class sgFileParser:
                 self.titles[lc_num]["k1"] = max_k1
 
 if __name__ == "__main__":
-    file_path = r"C:\Users\datho\PythonProjects\PakCalcs\3d Frame.TXT"
-#    file_path = r"C:\Users\DATaylor\Documents\Personal\PakCalcs\PakCalcs\3d Frame.TXT"
+#    file_path = r"C:\Users\datho\PythonProjects\PakCalcs\3d Frame.TXT"
+    file_path = r"C:\Users\DATaylor\Documents\Personal\PakCalcs\PakCalcs\3d Frame.TXT"
     parser = sgFileParser(file_path)
 #    print(parser.data)
 #    print(parser.units.get("LENGTH"))
@@ -179,7 +179,7 @@ if __name__ == "__main__":
 #    print(parser.units.get("MOMENT"))
     print(parser.titles)
 #    print(parser.combinations)
-#    pprint(dict(parser.design_actions_parsed))
+    pprint(dict(parser.design_actions_parsed))
     #pprint((parser.design_actions_parsed))
     """    
     for k, v in parser.design_actions_parsed.items():

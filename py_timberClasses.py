@@ -106,11 +106,11 @@ class beamDesign:
 
         # --- Tension flange ---
         if tens_continuous:
-            S_tens = 2.25 * d/b
-        else:
-            S_t1 = (d/b)**1.35 * (tens_Lay/d)**0.25
+            S_t1 = 2.25 * d/b
             S_t2 = 1.5 * d/b / ((pi*d/tens_Lalpha)**2 + 0.4)**0.5
             S_tens = min(S_t1, S_t2)
+        else:
+            S_tens = (d/b)**1.35 * (tens_Lay/d)**0.25
 
         return min(S_comp, S_tens)
 
@@ -190,6 +190,7 @@ class beamDesign:
             return 200/(self.rho_b*S_1)**2
 
     def checkM_dx(self, k1:float, M_starx:si.Physical):
+        #M_starx = (str(M_starx).strip('·'))
         if M_starx < 0.0*Nm:
             S_1 = self.S_1Hog
         else:
@@ -274,8 +275,8 @@ class beamDesign:
 
 if __name__ == "__main__":
     # Example usage
-    #file_path = r""
-    file_path = r"C:\Users\datho\PythonProjects\PakCalcs\3d Frame 260317.TXT"
+    file_path = r"C:\Users\DATaylor\Documents\Personal\PakCalcs\PakCalcs\3d Frame 260317.TXT"
+   # file_path = r"C:\Users\datho\PythonProjects\PakCalcs\3d Frame 260317.TXT"
     member_loading = lc.loading(file_path)
     beam = beamDesign(d=190*mm, b=45*mm, L=4.2*m,
                         L_ayT=300*mm, L_ayB=2100*mm,
