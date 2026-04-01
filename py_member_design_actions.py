@@ -6,6 +6,7 @@ from py_design_member import DesignMember
 from py_timberClasses import beamDesign, Section, Restraints
 import forallpeople as si
 si.environment("mystructural", top_level=True)
+from pathlib import Path
 
 class MemberDesignActions:
     def __init__(self, elements:list, load_cases:list, all_design_actions: dict, lc_titles: dict ):
@@ -146,17 +147,17 @@ class MemberDesignActions:
         return load_cases
 
 if __name__ == "__main__":
-    try:
-        file_path = r"C:\Users\datho\PythonProjects\PakCalcs\3d Frame 260317.TXT"
-    except:
-        file_path = r"C:\Users\DATaylor\Documents\Personal\PakCalcs\PakCalcs\3d Frame 260317.TXT"
+    primary_path = r"C:\Users\datho\PythonProjects\PakCalcs\3d Frame 260317.TXT"
+    fallback_path = r"C:\Users\DATaylor\Documents\Personal\PakCalcs\PakCalcs\3d Frame 260317.TXT"
+    file_path = primary_path if Path(primary_path).exists() else fallback_path
+    
     parser = sgFileParser(file_path)
     
     members = DesignMember.build_many(parser.design_members)
     #print((list(members[0])))
 
     des_act = MemberDesignActions(list(members[0].element_list), [11,12,13,14,15,16], parser.design_actions_parsed, parser.titles)
-    rafter_section = Section(name="rafter", d=140*mm, b=35*mm, rho_b=0.87)
+    rafter_section = Section(name="rafter", d=190*mm, b=45*mm, rho_b=0.87)
     rafter_restraints = Restraints(L_ayT=200*mm, L_ayB=4200*mm, L_alphaT=4200*mm, L_alphaB=4200*mm, cont_res_limit=rafter_section.cont_res_limit)
     rafter = beamDesign(section=rafter_section, restraints=rafter_restraints,
                    f_prime_b=8*MPa,)
