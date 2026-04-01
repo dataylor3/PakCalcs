@@ -162,7 +162,7 @@ if __name__ == "__main__":
     rafter = beamDesign(section=rafter_section, restraints=rafter_restraints,
                    f_prime_b=8*MPa,)
     
-    rafterMd, rafterUtil = rafter.checkM_dx(k1=0.57, M_starxin=-1.173*Nm)
+    rafterMd, rafterUtil = rafter.checkM_dx(k1=0.57, M_starx=-1.173*Nm)
     print(f"Capacity: {rafterMd} Utilization: {rafterUtil}")
 
 
@@ -175,7 +175,7 @@ if __name__ == "__main__":
         #print("Actions x:", (lc.actions.x))
         k1 = lc.K1
         for point in lc.actions.Mz:
-            rafterMd, rafterUtil = rafter.checkM_dx(k1=k1, M_starxin=point)
+            rafterMd, rafterUtil = rafter.checkM_dx(k1=k1, M_starx=point)
             print(f"Capacity: {rafterMd} Action: {point} Utilization: {rafterUtil}")
     #pprint(des_act.max_moment())
     

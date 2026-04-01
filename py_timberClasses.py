@@ -189,10 +189,7 @@ class beamDesign:
         else:
             return 200/(self.rho_b*S_1)**2
 
-    def checkM_dx(self, k1:float, M_starxin:si.Physical):
-        #print("M_staxin type", type(M_starxin), M_starxin)
-        M_starx = (M_starxin)
-        #print(type(M_starx), M_starx)
+    def checkM_dx(self, k1:float, M_starx:si.Physical):
         if M_starx < 0.0*Nm:
             S_1 = self.S_1Hog
         else:
