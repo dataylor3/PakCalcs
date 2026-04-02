@@ -162,8 +162,8 @@ if __name__ == "__main__":
     rafter = beamDesign(section=rafter_section, restraints=rafter_restraints,
                    f_prime_b=8*MPa,)
     
-    rafterMd, rafterUtil = rafter.checkM_dx(k1=0.57, M_starx=-1.173*Nm)
-    print(f"Capacity: {rafterMd} Utilization: {rafterUtil}")
+    #rafterMd, rafterUtil = rafter.checkM_dx(k1=0.57, M_starx=-1.173*Nm)
+    #print(f"Capacity: {rafterMd} Utilization: {rafterUtil}")
 
 
     
@@ -174,8 +174,12 @@ if __name__ == "__main__":
         #print("Actions Mz:", (lc.actions.Mz))  # print first 5 for brevity
         #print("Actions x:", (lc.actions.x))
         k1 = lc.K1
-        for point in lc.actions.Mz:
-            rafterMd, rafterUtil = rafter.checkM_dx(k1=k1, M_starx=point)
-            print(f"Capacity: {rafterMd} Action: {point} Utilization: {rafterUtil}")
+        for point in lc.actions.My:
+            rafterMd, rafterUtil = rafter.checkM_stary(k1=k1, M_stary=point)
+            print(f"Capacity: {rafterMd} Action: {point} Utilization: {rafterUtil:.2f}")
+        
+        for Mx, My in zip(lc.actions.Mz, lc.actions.My):
+            rafterUtil = rafter.check_combined_Mx_My(M_starx=Mx, M_stary=My, k1=k1)
+            print(f"Biaxial bending Utilization: {rafterUtil:.2f}")
     #pprint(des_act.max_moment())
     

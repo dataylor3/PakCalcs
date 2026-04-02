@@ -197,8 +197,24 @@ class beamDesign:
         k_12 = self.k_12(S_1)
         M_dx = self.M_d(k1, k_12, self.section.Z_x)
         #print(type(M_dx), M_dx, type(M_starx), M_starx)
-        UtilRatio = M_starx / M_dx
+        UtilRatio = abs(M_starx / M_dx)
         return M_dx, UtilRatio
+
+    def checkM_stary(self, k1:float, M_stary:si.Physical):
+        k_12 = 1.0
+        M_dy = self.M_d(k1, k_12, self.section.Z_y)
+        UtilRatio = abs(M_stary / M_dy)
+        return M_dy, UtilRatio
+
+    def check_combined_Mx_My(self, k1:float, M_starx:si.Physical, M_stary:si.Physical):
+        M_dx, Util_x = self.checkM_dx(k1, M_starx)
+        M_dy, Util_y = self.checkM_stary(k1, M_stary)
+
+        # Interaction equation for combined bending
+        interaction = abs(M_starx / M_dx) + abs(M_stary / M_dy)
+
+        return interaction
+
 
     @property
     def k_12Sag(self):
