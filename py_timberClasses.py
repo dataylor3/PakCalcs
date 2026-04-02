@@ -42,6 +42,11 @@ class Restraints:
         return self.L_ayB <= self.cont_res_limit
 
 
+class Material:
+    def __init__(self, name:str, f_prime_b:si.Physical):
+        self.name = name
+        self.f_prime_b = f_prime_b
+
 class beamDesign:
     def __init__(self, section: Section, restraints: Restraints,
                    f_prime_b:si.Physical,

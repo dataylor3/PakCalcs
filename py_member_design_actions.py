@@ -178,8 +178,8 @@ if __name__ == "__main__":
             rafterMd, rafterUtil = rafter.checkM_stary(k1=k1, M_stary=point)
             print(f"Capacity: {rafterMd} Action: {point} Utilization: {rafterUtil:.2f}")
         
-        for Mx, My in zip(lc.actions.Mz, lc.actions.My):
+        for x, Mx, My in zip(lc.actions.x, lc.actions.Mz, lc.actions.My):
             rafterUtil = rafter.check_combined_Mx_My(M_starx=Mx, M_stary=My, k1=k1)
-            print(f"Biaxial bending Utilization: {rafterUtil:.2f}")
+            print(f"Biaxial bending Utilization: {rafterUtil:.2f} at x={x} with Mx={Mx:.2f} and My={My:.2f}")
     #pprint(des_act.max_moment())
     
