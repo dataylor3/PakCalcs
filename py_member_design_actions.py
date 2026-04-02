@@ -158,7 +158,7 @@ if __name__ == "__main__":
 
     des_act = MemberDesignActions(list(members[0].element_list), [11,12,13,14,15,16], parser.design_actions_parsed, parser.titles)
     rafter_section = Section(name="rafter", d=190*mm, b=45*mm, rho_b=0.87)
-    rafter_restraints = Restraints(L_ayT=200*mm, L_ayB=4200*mm, L_alphaT=4200*mm, L_alphaB=4200*mm, cont_res_limit=rafter_section.cont_res_limit)
+    rafter_restraints = Restraints(L_ayT=200*mm, L_ayB=4200*mm, L_alphaT=2100*mm, L_alphaB=2100*mm, cont_res_limit=rafter_section.cont_res_limit)
     material = Material(name="LVL", f_prime_b=8*MPa, f_prime_s=0.5*MPa, f_prime_c=10*MPa, f_prime_t=6*MPa)
     mod_factors = ModificationFactors(k_4=1.0, k_6=1.0, k_9=1.0)
 
