@@ -7,11 +7,14 @@ from typing import Dict, Callable, Optional
 import py_loadClasses as lc
 
 class Section:
-    def __init__(self, name:str, d:si.Physical, b:si.Physical, rho_b:float):
+    def __init__(self, name:str, d:si.Physical, b:si.Physical):
         self.name = name
         self.d = d
         self.b = b
-        self.rho_b = rho_b
+
+    @property
+    def A_c(self):
+        return self.b * self.d  # Cross-sectional area for rectangular section
 
     @property
     def A_s(self):
@@ -25,18 +28,41 @@ class Section:
     def Z_y(self):
         return (self.d*self.b**2)/6  # Section modulus for rectangular section
     
-    @property
-    def cont_res_limit(self):
-        return self.d*64*(self.b/(self.rho_b*self.d))**2
+
+
+
+
+class Material:
+    def __init__(self, name:str, f_prime_b:si.Physical, rho_b:float,
+                 f_prime_s:si.Physical,
+                 f_prime_c:si.Physical, rho_c:float,
+                 f_prime_t:si.Physical):
+        self.name = name
+        self.f_prime_b = f_prime_b  #Characteristic value in bending
+        self.rho_b = rho_b          #Material factor for bending
+        self.f_prime_s = f_prime_s  #Characteristic value in shear
+        self.f_prime_c = f_prime_c  #Characteristic value in compression parallel to grain
+        self.rho_c = rho_c          #Material factor for compression
+        self.f_prime_t = f_prime_t  #Characteristic value in tension parallel to grain
 
 
 class Restraints:
-    def __init__(self, L_ayT:si.Physical, L_ayB:si.Physical, L_alphaT:si.Physical, L_alphaB:si.Physical, cont_res_limit:si.Physical):
+    def __init__(self, material:Material, section:Section,
+                 L_ayT:si.Physical, L_ayB:si.Physical,
+                 L_alphaT:si.Physical, L_alphaB:si.Physical,
+                 g_13:float, L:si.Physical):
         self.L_ayT = L_ayT
         self.L_ayB = L_ayB
         self.L_alphaT = L_alphaT
         self.L_alphaB = L_alphaB
-        self.cont_res_limit = cont_res_limit
+        self.material = material
+        self.section = section
+        self.g_13 = g_13
+        self.L = L
+
+    @property
+    def cont_res_limit(self):
+        return self.section.d*64*(self.section.b/(self.material.rho_b*self.section.d))**2
 
     @property
     def top_is_continuous(self):
@@ -45,17 +71,6 @@ class Restraints:
     def bottom_is_continuous(self):
         return self.L_ayB <= self.cont_res_limit
 
-
-class Material:
-    def __init__(self, name:str, f_prime_b:si.Physical,
-                 f_prime_s:si.Physical,
-                 f_prime_c:si.Physical,
-                 f_prime_t:si.Physical):
-        self.name = name
-        self.f_prime_b = f_prime_b  #Characteristic value in bending
-        self.f_prime_s = f_prime_s  #Characteristic value in shear
-        self.f_prime_c = f_prime_c  #Characteristic value in compression parallel to grain
-        self.f_prime_t = f_prime_t  #Characteristic value in tension parallel to grain
 
 
 class ModificationFactors:
@@ -89,7 +104,8 @@ class beamDesign:
 
         self.phi = phi
         self.section = section
-        self.rho_b = section.rho_b
+        self.rho_b = material.rho_b
+        self.rho_c = material.rho_c
         self.restraints = restraints
         self.f_prime_b = material.f_prime_b
         self.f_prime_s = material.f_prime_s
@@ -98,6 +114,7 @@ class beamDesign:
         self.k_4 = mod_factors.k_4
         self.k_6 = mod_factors.k_6
         self.k_9 = mod_factors.k_9
+        self.g_13 = restraints.g_13
     
     
     def _S1_helper(self,
@@ -148,14 +165,15 @@ class beamDesign:
             tens_Lalpha = R.L_alphaB,   # torsional restraint to compression edge
         )
 
-    def k_12(self, S_1:float):
+    def k_12(self, S:float, rho:float):
         #print(f'S_1: {S_1}')
-        if self.rho_b*S_1 <=10:
+        if rho*S <=10:
             return 1.0
-        elif 10<= self.rho_b*S_1 <20:
-            return 1.5-0.05*(self.rho_b*S_1)
+        elif 10<= rho*S <20:
+            return 1.5-0.05*(rho*S)
         else:
-            return 200/(self.rho_b*S_1)**2
+            return 200/(rho*S)**2
+
     ### Bending Checks
     def M_d(self, k_1:float, k_12:float, Z:si.Physical):
         return self.phi*k_1*self.k_4*self.k_6*self.k_9*k_12*self.f_prime_b*Z
@@ -165,7 +183,7 @@ class beamDesign:
             S_1 = self.S_1Hog
         else:
             S_1 = self.S_1Sag
-        k_12 = self.k_12(S_1)
+        k_12 = self.k_12(S_1, self.rho_b)
         M_dx = self.M_d(k1, k_12, self.section.Z_x)
         #print(type(M_dx), M_dx, type(M_starx), M_starx)
         UtilRatio = abs(M_starx / M_dx)
@@ -194,3 +212,34 @@ class beamDesign:
         UtilRatio = abs(V_star / V_d)
         return V_d, UtilRatio
 
+    ### Compressive Checks
+    def N_d(self, k_1:float, k_12:float, A_c:si.Physical):
+        return self.phi*k_1*self.k_4*self.k_6*k_12*self.f_prime_c*A_c
+    
+    
+    def _S_comp_helper(self, axis: str, L_a:si.Physical, col_dim:si.Physical):
+                       
+        d = self.section.d
+        b = self.section.b
+        L = self.restraints.L
+        g_13 = self.restraints.g_13
+
+        s_n1 = (L_a/col_dim)
+        s_n2 = g_13 * L/col_dim
+        
+        if axis.lower() == 'x':
+            s_n3 = 0
+        else:
+            s_n3 = 3.5 * d/b
+
+        return min(s_n1, s_n2, s_n3)
+    
+    @property
+    def S_3(self):
+        R = self.restraints
+        return self._S_comp_helper('x', R.L_alphaT, self.section.d)
+
+    @property
+    def S_4(self):
+        R = self.restraints
+        return self._S_comp_helper('y', R.L_alphaB, self.section.b)
