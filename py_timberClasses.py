@@ -17,6 +17,10 @@ class Section:
         return self.b * self.d  # Cross-sectional area for rectangular section
 
     @property
+    def A_t(self):
+        return self.b * self.d  # Cross-sectional area for rectangular section
+
+    @property
     def A_s(self):
         return 2/3 * self.b * self.d  # Cross-sectional area for rectangular section
 
@@ -28,9 +32,6 @@ class Section:
     def Z_y(self):
         return (self.d*self.b**2)/6  # Section modulus for rectangular section
     
-
-
-
 
 class Material:
     def __init__(self, name:str, f_prime_b:si.Physical, rho_b:float,
@@ -47,18 +48,21 @@ class Material:
 
 
 class Restraints:
-    def __init__(self, material:Material, section:Section,
-                 L_ayT:si.Physical, L_ayB:si.Physical,
-                 L_alphaT:si.Physical, L_alphaB:si.Physical,
-                 g_13:float, L:si.Physical):
-        self.L_ayT = L_ayT
-        self.L_ayB = L_ayB
-        self.L_alphaT = L_alphaT
-        self.L_alphaB = L_alphaB
+    def __init__(self, material:Material, section:Section):
         self.material = material
         self.section = section
-        self.g_13 = g_13
-        self.L = L
+
+
+class bendRestraints(Restraints):
+    def __init__(self, material:Material, section:Section,
+                 L_ayT:si.Physical, L_ayB:si.Physical,
+                 L_alphaT:si.Physical, L_alphaB:si.Physical):
+        super().__init__(material, section)
+
+        self.L_ayT = L_ayT  # Spacing of discrete lateral restraints on the top of the beam
+        self.L_ayB = L_ayB  # Spacing of discrete lateral restraints
+        self.L_alphaT = L_alphaT  # Spacing of discrete torsional restraints on the top of the beam
+        self.L_alphaB = L_alphaB  # Spacing of discrete torsional restraints on
 
     @property
     def cont_res_limit(self):
@@ -72,6 +76,20 @@ class Restraints:
         return self.L_ayB <= self.cont_res_limit
 
 
+class compRestraints(Restraints):
+    def __init__(self, material:Material, section:Section,
+                 x_cont_res:bool, y_cont_res:bool,
+                 L_ax:si.Physical, L_ay:si.Physical,
+                 g_13:float, L:si.Physical):
+        super().__init__(material, section)
+
+        self.g_13 = g_13  # Strength sharing factor for compression members
+        self.L = L        # Length of the member
+        self.L_ax = L_ax  # Spacing of discrete restraints in the x direction
+        self.L_ay = L_ay  # Spacing of discrete restraints in the y direction
+        self.x_cont_res = x_cont_res  # Whether there are continuous restraints in the x direction
+        self.y_cont_res = y_cont_res  # Whether there are continuous restraints in the y
+
 
 class ModificationFactors:
     def __init__(self, k_4:float = 1.0, k_6:float = 1.0, k_9:float = 1.0):
@@ -81,9 +99,10 @@ class ModificationFactors:
 
 
 class beamDesign:
-    def __init__(self, section: Section, restraints: Restraints,
-                   material: Material, mod_factors: ModificationFactors,
-                      phi:float = 0.95 ):
+    def __init__(self, section: Section, material: Material,
+                 bendrestraints: bendRestraints, mod_factors: ModificationFactors,
+                 comprestraints: Optional[compRestraints] = None,
+                 phi:float = 0.95 ):
         """
         Parameters
         section: The cross-sectional properties of the beam
@@ -106,7 +125,8 @@ class beamDesign:
         self.section = section
         self.rho_b = material.rho_b
         self.rho_c = material.rho_c
-        self.restraints = restraints
+        self.bendrestraints = bendrestraints
+        self.comprestraints = comprestraints
         self.f_prime_b = material.f_prime_b
         self.f_prime_s = material.f_prime_s
         self.f_prime_c = material.f_prime_c
@@ -114,7 +134,7 @@ class beamDesign:
         self.k_4 = mod_factors.k_4
         self.k_6 = mod_factors.k_6
         self.k_9 = mod_factors.k_9
-        self.g_13 = restraints.g_13
+        
     
     
     def _S1_helper(self,
@@ -141,7 +161,7 @@ class beamDesign:
 
     @property
     def S_1Sag(self):
-        R = self.restraints
+        R = self.bendrestraints
 
         return self._S1_helper(
             comp_continuous = R.top_is_continuous,
@@ -154,7 +174,7 @@ class beamDesign:
 
     @property        
     def S_1Hog(self):
-        R = self.restraints
+        R = self.bendrestraints
 
         return self._S1_helper(
             comp_continuous = R.bottom_is_continuous,
@@ -212,34 +232,60 @@ class beamDesign:
         UtilRatio = abs(V_star / V_d)
         return V_d, UtilRatio
 
+    ### Tension Checks
+    def N_dt(self, k_1:float):
+        return self.phi*k_1*self.k_4*self.k_6*self.f_prime_t*self.section.A_t
+   
     ### Compressive Checks
-    def N_d(self, k_1:float, k_12:float, A_c:si.Physical):
+    def N_dc(self, k_1:float, k_12:float, A_c:si.Physical):
         return self.phi*k_1*self.k_4*self.k_6*k_12*self.f_prime_c*A_c
     
-    
-    def _S_comp_helper(self, axis: str, L_a:si.Physical, col_dim:si.Physical):
+    def _S_comp_helper(self, axis: str, L_a:si.Physical,
+                       col_dim:si.Physical, cont_res:bool):
                        
         d = self.section.d
         b = self.section.b
-        L = self.restraints.L
-        g_13 = self.restraints.g_13
+        L = self.comprestraints.L
+        g_13 = self.comprestraints.g_13
 
         s_n1 = (L_a/col_dim)
         s_n2 = g_13 * L/col_dim
-        
+            
         if axis.lower() == 'x':
             s_n3 = 0
         else:
             s_n3 = 3.5 * d/b
-
-        return min(s_n1, s_n2, s_n3)
-    
+        
+        if cont_res:
+            return min(s_n1, s_n2, s_n3)
+        else:
+            return min(s_n1, s_n2)
+   
     @property
     def S_3(self):
-        R = self.restraints
-        return self._S_comp_helper('x', R.L_alphaT, self.section.d)
+        compR = self.comprestraints
+        return self._S_comp_helper(axis='x', L_a=compR.L_ax, col_dim=self.section.d, cont_res=compR.x_cont_res)
 
     @property
     def S_4(self):
-        R = self.restraints
-        return self._S_comp_helper('y', R.L_alphaB, self.section.b)
+        compR = self.comprestraints
+        return self._S_comp_helper(axis='y', L_a=compR.L_ay, col_dim=self.section.b, cont_res=compR.y_cont_res)
+
+    def checkN_d(self, k1:float, N_star:si.Physical):
+        if N_star > 0.0*N:
+            k_12x = self.k_12(self.S_3, self.rho_c)
+            k_12y = self.k_12(self.S_4, self.rho_c)
+            N_dx = self.N_dc(k1, k_12x, self.section.A_c)
+            N_dy = self.N_dc(k1, k_12y, self.section.A_c)
+            UtilRatio_x = abs(N_star / N_dx)
+            UtilRatio_y = abs(N_star / N_dy)
+            return N_dx, N_dy, UtilRatio_x, UtilRatio_y
+        else:
+            N_dt = self.N_dt(k1)
+            UtilRatio = abs(N_star / N_dt)
+            return N_dt, N_dt, UtilRatio, UtilRatio
+        
+    def checkN_dt(self, k1:float, N_star:si.Physical):
+        N_dt = self.N_dt(k1)
+        UtilRatio = abs(N_star / N_dt)
+        return N_dt, UtilRatio

@@ -3,7 +3,7 @@ from pprint import pprint
 from py_ActionData import ActionData
 from py_LoadCase import LoadCase
 from py_design_member import DesignMember
-from py_timberClasses import beamDesign, Section, Restraints, Material, ModificationFactors
+from py_timberClasses import beamDesign, Section, bendRestraints, Material, ModificationFactors, compRestraints
 import forallpeople as si
 si.environment("mystructural", top_level=True)
 from pathlib import Path
@@ -159,12 +159,15 @@ if __name__ == "__main__":
     des_act = MemberDesignActions(list(members[0].element_list), [11,12,13,14,15,16], parser.design_actions_parsed, parser.titles)
     rafter_section = Section(name="rafter", d=190*mm, b=45*mm)
     material = Material(name="LVL", f_prime_b=8*MPa, f_prime_s=0.5*MPa, f_prime_c=10*MPa, f_prime_t=6*MPa, rho_b=0.85, rho_c=0.9)
-    rafter_restraints = Restraints(L_ayT=200*mm, L_ayB=4200*mm, L_alphaT=2100*mm, L_alphaB=2100*mm, g_13=1.5,
-                                   material=material, section=rafter_section, L = 4200*mm)
+    rafter_restraints = bendRestraints(L_ayT=200*mm, L_ayB=4200*mm, L_alphaT=2100*mm, L_alphaB=2100*mm, 
+                                        material=material, section=rafter_section)
+    column_restraints = compRestraints(g_13=1.5, L=4000*mm, L_ax = 4000*mm, L_ay=2100*mm,
+                                       x_cont_res = False, y_cont_res = False,
+                                       material=material, section=rafter_section)
     mod_factors = ModificationFactors(k_4=1.0, k_6=1.0, k_9=1.0)
 
-    rafter = beamDesign(section=rafter_section, restraints=rafter_restraints,
-                   material=material, mod_factors=mod_factors)
+    rafter = beamDesign(section=rafter_section, bendrestraints=rafter_restraints,
+                   material=material, mod_factors=mod_factors, comprestraints=column_restraints)
     
     #rafterMd, rafterUtil = rafter.checkM_dx(k1=0.57, M_starx=-1.173*Nm)
     #print(f"Capacity: {rafterMd} Utilization: {rafterUtil}")
@@ -191,7 +194,14 @@ if __name__ == "__main__":
             rafterVdz, rafterVUtilz = rafter.checkV(k1=k1, V_star=Vz)
             print(f"Shear Utilization: {rafterVUtily:.2f} at x={x} with Vy={Vy:.2f} and Vd={rafterVdy:.2f}")
             print(f"Shear Utilization: {rafterVUtilz:.2f} at x={x} with Vz={Vz:.2f} and Vd={rafterVdz:.2f}")
-    
-    
+        
+        for x, Ax in zip(lc.actions.x, lc.actions.Ax):
+            if Ax > 0:
+                rafterNdx, rafterNdy, rafterUtilx, rafterUtildy = rafter.checkN_d(k1=k1, N_star=Ax)
+                print(f"X-axis Axial Utilization: {rafterUtilx:.2f} at x={x} with Ax={Ax:.2f} and Ndx={rafterNdx:.2f}")
+                print(f"Y-axis Axial Utilization: {rafterUtildy:.2f} at x={x} with Ax={Ax:.2f} and Ndy={rafterNdy:.2f}")
+            else:
+                rafterNdt, rafterUtilt = rafter.checkN_dt(k1=k1, N_star=Ax)
+                print(f"Tension Axial Utilization: {rafterUtilt:.2f} at x={x} with Ax={Ax:.2f} and Ndt={rafterNdt:.2f}")
     #pprint(des_act.max_moment())
     
