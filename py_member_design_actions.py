@@ -181,9 +181,9 @@ if __name__ == "__main__":
         #print("Actions Mz:", (lc.actions.Mz))  # print first 5 for brevity
         #print("Actions x:", (lc.actions.x))
         k1 = lc.K1
-        for point in lc.actions.My:
-            rafterMd, rafterUtil = rafter.checkM_dy(k1=k1, M_stary=point)
-            print(f"Capacity: {rafterMd} Action: {point} Utilization: {rafterUtil:.2f}")
+        for x, Mx in zip(lc.actions.x, lc.actions.Mz):
+            rafterMd, rafterUtil = rafter.checkM_dx(k1=k1, M_starx=Mx)
+            print(f"At x={x} Capacity: {rafterMd} Action: {Mx} Utilization: {rafterUtil:.2f}")
         
         for x, Mx, My in zip(lc.actions.x, lc.actions.Mz, lc.actions.My):
             rafterUtil = rafter.check_combined_Mx_My(M_starx=Mx, M_stary=My, k1=k1)
@@ -203,5 +203,10 @@ if __name__ == "__main__":
             else:
                 rafterNdt, rafterUtilt = rafter.checkN_dt(k1=k1, N_star=Ax)
                 print(f"Tension Axial Utilization: {rafterUtilt:.2f} at x={x} with Ax={Ax:.2f} and Ndt={rafterNdt:.2f}")
+    
+        for x, Mx, My, Ax in zip(lc.actions.x, lc.actions.Mz, lc.actions.My, lc.actions.Ax):
+            combined_util = rafter.check_combined_M_N(M_starx=Mx, M_stary=My, N_star=Ax, k1=k1)
+            print(f"Combined M-N Utilization: {combined_util:.2f} at x={x} with Mx={Mx:.2f}, My={My:.2f}, Ax={Ax:.2f}")
+    
     #pprint(des_act.max_moment())
     

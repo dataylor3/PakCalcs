@@ -135,8 +135,6 @@ class beamDesign:
         self.k_6 = mod_factors.k_6
         self.k_9 = mod_factors.k_9
         
-    
-    
     def _S1_helper(self,
                 comp_continuous, tens_continuous,
                 comp_Lay, tens_Lay, tens_Lalpha):
@@ -289,3 +287,30 @@ class beamDesign:
         N_dt = self.N_dt(k1)
         UtilRatio = abs(N_star / N_dt)
         return N_dt, UtilRatio
+    
+    def check_combined_M_N(self, k1:float, N_star:si.Physical, M_starx:si.Physical, M_stary:si.Physical):
+        N_dx, N_dy, _, _ = self.checkN_d(k1, N_star)
+        if N_star < 0.0*N:
+            N_dt = N_dx
+        M_dx, _ = self.checkM_dx(k1, M_starx)
+        if M_starx < 0.0*Nm:
+            S_1 = self.S_1Hog
+        else:
+            S_1 = self.S_1Sag
+        k12x = self.k_12(S_1, self.rho_b)
+        M_dy, _ = self.checkM_dy(k1, M_stary)
+        k12y = 1.0
+        
+        if N_star >= 0.0*N:
+            # Interaction equations for combined axial comp and bending
+            util1 = (M_starx / M_dx)**2 + abs(N_star / N_dy)
+            util2 = abs(M_starx / M_dx) + abs(N_star / N_dx)
+            util3 = (M_starx / M_dx)**2 + abs(M_stary / M_dy) + abs(N_star / N_dy)
+            util4 = abs(M_starx / M_dx) + (M_stary / M_dy)**2 + abs(N_star / N_dx)
+            return max(util1, util2, util3, util4)
+        else:
+            # Interaction equations for combined tension and bending
+            util1 = k12x * abs(M_starx / M_dx) + abs(N_star / N_dt)
+            util2 = k12y * abs(M_stary / M_dy) + abs(N_star / N_dt)
+            util3 = abs(M_starx / M_dx) - self.section.Z_x / self.section.A_t * abs(N_star / M_dx)
+            return max(util1, util2, util3)
