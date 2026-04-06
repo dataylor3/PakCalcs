@@ -7,6 +7,8 @@ from py_timberClasses import beamDesign, Section, bendRestraints, Material, Modi
 import forallpeople as si
 si.environment("mystructural", top_level=True)
 from pathlib import Path
+from py_CheckResult import BeamCheckResult
+from py_member_envelope import MemberEnvelope
 
 class MemberDesignActions:
     def __init__(self, elements:list, load_cases:list, all_design_actions: dict, lc_titles: dict ):
@@ -172,41 +174,149 @@ if __name__ == "__main__":
     #rafterMd, rafterUtil = rafter.checkM_dx(k1=0.57, M_starx=-1.173*Nm)
     #print(f"Capacity: {rafterMd} Utilization: {rafterUtil}")
 
-
+    results_envelope = MemberEnvelope()
     
     for lc in des_act.design_action_data:
-        print("Load Case ID:", lc.id)
-        print("Load Case:", lc.title)
-        print("K1:", lc.K1)
+        #print("Load Case ID:", lc.id)
+        #print("Load Case:", lc.title)
+        #print("K1:", lc.K1)
         #print("Actions Mz:", (lc.actions.Mz))  # print first 5 for brevity
         #print("Actions x:", (lc.actions.x))
         k1 = lc.K1
         for x, Mx in zip(lc.actions.x, lc.actions.Mz):
             rafterMd, rafterUtil = rafter.checkM_dx(k1=k1, M_starx=Mx)
-            print(f"At x={x} Capacity: {rafterMd} Action: {Mx} Utilization: {rafterUtil:.2f}")
-        
-        for x, Mx, My in zip(lc.actions.x, lc.actions.Mz, lc.actions.My):
-            rafterUtil = rafter.check_combined_Mx_My(M_starx=Mx, M_stary=My, k1=k1)
-            print(f"Biaxial bending Utilization: {rafterUtil:.2f} at x={x} with Mx={Mx:.2f} and My={My:.2f}")
+            #print(f"At x={x} Capacity: {rafterMd} Action: {Mx} Utilization: {rafterUtil:.2f}")
+            results_envelope.add(BeamCheckResult(
+                mechanism="Mx",
+                load_case_ID=lc.id,
+                load_case_name=lc.title,
+                position=x,
+                capacities={"Mx": rafterMd},
+                demands={"Mx": Mx},
+                utilisation=rafterUtil
+            ))
 
-        for x, Vy, Vz in zip(lc.actions.x, lc.actions.Vy, lc.actions.Vz):
+        for x, My in zip(lc.actions.x, lc.actions.My):
+            rafterMd, rafterUtil = rafter.checkM_dy(k1=k1, M_stary=My)
+            #print(f"At x={x} Capacity: {rafterMd} Action: {My} Utilization: {rafterUtil:.2f}")
+            results_envelope.add(BeamCheckResult(
+                mechanism="My",
+                load_case_ID=lc.id,
+                load_case_name=lc.title,
+                position=x,
+                capacities={"My": rafterMd},
+                demands={"My": My},
+                utilisation=rafterUtil
+            ))
+
+        for x, Mx, My in zip(lc.actions.x, lc.actions.Mz, lc.actions.My):
+            M_dx, M_dy, rafterUtil = rafter.check_combined_Mx_My(M_starx=Mx, M_stary=My, k1=k1)
+            #print(f"Biaxial bending Utilization: {rafterUtil:.2f} at x={x} with Mx={Mx:.2f} and My={My:.2f}")
+            results_envelope.add(BeamCheckResult(
+                mechanism="Mx+My",
+                load_case_ID=lc.id,
+                load_case_name=lc.title,
+                position=x,
+                capacities={"Mx": M_dx, "My": M_dy},
+                demands={"Mx": Mx, "My": My},
+                utilisation=rafterUtil
+            ))
+
+        for x, Vy in zip(lc.actions.x, lc.actions.Vy):
             rafterVdy, rafterVUtily = rafter.checkV(k1=k1, V_star=Vy)
+            #print(f"Shear Utilization: {rafterVUtily:.2f} at x={x} with Vy={Vy:.2f} and Vd={rafterVdy:.2f}")
+            results_envelope.add(BeamCheckResult(
+                mechanism="V",
+                load_case_ID=lc.id,
+                load_case_name=lc.title,
+                position=x,
+                capacities={"Vy": rafterVdy},
+                demands={"Vy": Vy},
+                utilisation=rafterVUtily
+            ))
+
+        for x, Vz in zip(lc.actions.x, lc.actions.Vz):
             rafterVdz, rafterVUtilz = rafter.checkV(k1=k1, V_star=Vz)
-            print(f"Shear Utilization: {rafterVUtily:.2f} at x={x} with Vy={Vy:.2f} and Vd={rafterVdy:.2f}")
-            print(f"Shear Utilization: {rafterVUtilz:.2f} at x={x} with Vz={Vz:.2f} and Vd={rafterVdz:.2f}")
-        
+            #print(f"Shear Utilization: {rafterVUtilz:.2f} at x={x} with Vz={Vz:.2f} and Vd={rafterVdz:.2f}")
+            results_envelope.add(BeamCheckResult(
+                mechanism="V",
+                load_case_ID=lc.id,
+                load_case_name=lc.title,
+                position=x,
+                capacities={"Vz": rafterVdz},
+                demands={"Vz": Vz},
+                utilisation=rafterVUtilz
+            ))
+
         for x, Ax in zip(lc.actions.x, lc.actions.Ax):
             if Ax > 0:
                 rafterNdx, rafterNdy, rafterUtilx, rafterUtildy = rafter.checkN_d(k1=k1, N_star=Ax)
-                print(f"X-axis Axial Utilization: {rafterUtilx:.2f} at x={x} with Ax={Ax:.2f} and Ndx={rafterNdx:.2f}")
-                print(f"Y-axis Axial Utilization: {rafterUtildy:.2f} at x={x} with Ax={Ax:.2f} and Ndy={rafterNdy:.2f}")
+                #print(f"X-axis Axial Utilization: {rafterUtilx:.2f} at x={x} with Ax={Ax:.2f} and Ndx={rafterNdx:.2f}")
+                #print(f"Y-axis Axial Utilization: {rafterUtildy:.2f} at x={x} with Ax={Ax:.2f} and Ndy={rafterNdy:.2f}")
+                results_envelope.add(BeamCheckResult(
+                    mechanism="Ncx",
+                    load_case_ID=lc.id,
+                    load_case_name=lc.title,
+                    position=x,
+                    capacities={"N_dx": rafterNdx},
+                    demands={"Ax": Ax},
+                    utilisation=rafterUtilx
+                ))
+                results_envelope.add(BeamCheckResult(
+                    mechanism="Ncy",
+                    load_case_ID=lc.id,
+                    load_case_name=lc.title,
+                    position=x,
+                    capacities={"N_dy": rafterNdy},
+                    demands={"Ax": Ax},
+                    utilisation=rafterUtildy
+                ))
+                
             else:
                 rafterNdt, rafterUtilt = rafter.checkN_dt(k1=k1, N_star=Ax)
-                print(f"Tension Axial Utilization: {rafterUtilt:.2f} at x={x} with Ax={Ax:.2f} and Ndt={rafterNdt:.2f}")
-    
+                results_envelope.add(BeamCheckResult(
+                    mechanism="Nt",
+                    load_case_ID=lc.id,
+                    load_case_name=lc.title,
+                    position=x,
+                    capacities={"N_dt": rafterNdt},
+                    demands={"Ax": Ax},
+                    utilisation=rafterUtilt
+                ))
+
+        for x, Mx, My, Ax in zip(lc.actions.x, lc.actions.Mz, lc.actions.My, lc.actions.Ax):
+            if Ax >= 0.0:
+                M_dx, M_dy, N_dx, N_dy,combined_util = rafter.check_combined_M_N(M_starx=Mx, M_stary=My, N_star=Ax, k1=k1)
+                #print(f"Combined M-N Utilization: {combined_util:.2f} at x={x} with Mx={Mx:.2f}, My={My:.2f}, Ax={Ax:.2f}")
+                results_envelope.add(BeamCheckResult(
+                    mechanism="Mx+My+Nc",
+                    load_case_ID=lc.id,
+                    load_case_name=lc.title,
+                    position=x,
+                    capacities={"Mx": M_dx, "My": M_dy, "Ndx": N_dx, "Ndy": N_dy},
+                    demands={"Mx": Mx, "My": My, "N": Ax},
+                    utilisation=combined_util
+                ))
+            else:
+                M_dx, M_dy, N_dt, combined_util = rafter.check_combined_M_N(M_starx=Mx, M_stary=My, N_star=Ax, k1=k1)
+                #print(f"Combined M-N Utilization: {combined_util:.2f} at x={x} with Mx={Mx:.2f}, My={My:.2f}, Ax={Ax:.2f}")
+                results_envelope.add(BeamCheckResult(
+                    mechanism="Mx+My+Nt",
+                    load_case_ID=lc.id,
+                    load_case_name=lc.title,
+                    position=x,
+                    capacities={"Mx": M_dx, "My": M_dy, "N_dt": N_dt},
+                    demands={"Mx": Mx, "My": My, "N": Ax},
+                    utilisation=combined_util
+                ))
+
+        pprint(results_envelope.governing)
+
+    """
         for x, Mx, My, Ax in zip(lc.actions.x, lc.actions.Mz, lc.actions.My, lc.actions.Ax):
             combined_util = rafter.check_combined_M_N(M_starx=Mx, M_stary=My, N_star=Ax, k1=k1)
             print(f"Combined M-N Utilization: {combined_util:.2f} at x={x} with Mx={Mx:.2f}, My={My:.2f}, Ax={Ax:.2f}")
     
+        """
     #pprint(des_act.max_moment())
     

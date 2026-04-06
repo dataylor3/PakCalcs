@@ -6,6 +6,7 @@ import json
 from typing import Dict, Callable, Optional
 import py_loadClasses as lc
 
+
 class Section:
     def __init__(self, name:str, d:si.Physical, b:si.Physical):
         self.name = name
@@ -219,7 +220,7 @@ class beamDesign:
 
         # Interaction equation for combined bending
         interaction = abs(M_starx / M_dx) + abs(M_stary / M_dy)
-        return interaction
+        return M_dx, M_dy, interaction
    
     ### Shear Checks
     def V_d(self, k_1:float):
@@ -307,10 +308,10 @@ class beamDesign:
             util2 = abs(M_starx / M_dx) + abs(N_star / N_dx)
             util3 = (M_starx / M_dx)**2 + abs(M_stary / M_dy) + abs(N_star / N_dy)
             util4 = abs(M_starx / M_dx) + (M_stary / M_dy)**2 + abs(N_star / N_dx)
-            return max(util1, util2, util3, util4)
+            return M_dx, M_dy, N_dx, N_dy, max(util1, util2, util3, util4)
         else:
             # Interaction equations for combined tension and bending
             util1 = k12x * abs(M_starx / M_dx) + abs(N_star / N_dt)
             util2 = k12y * abs(M_stary / M_dy) + abs(N_star / N_dt)
             util3 = abs(M_starx / M_dx) - self.section.Z_x / self.section.A_t * abs(N_star / M_dx)
-            return max(util1, util2, util3)
+            return M_dx, M_dy, N_dt, max(util1, util2, util3)
