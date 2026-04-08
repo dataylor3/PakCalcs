@@ -156,14 +156,14 @@ if __name__ == "__main__":
     parser = sgFileParser(file_path)
     
     members = DesignMember.build_many(parser.design_members)
-    #print((list(members[0])))
-
-    des_act = MemberDesignActions(list(members[0].element_list), [11,12,13,14,15,16], parser.design_actions_parsed, parser.titles)
-    rafter_section = Section(name="rafter", d=190*mm, b=45*mm)
+    #print((list(members)))
+    n = 0
+    des_act = MemberDesignActions(list(members[n].element_list), [11,12,13,14,15,16], parser.design_actions_parsed, parser.titles)
+    rafter_section = Section(name="rafter", d=135*mm, b=135*mm)
     material = Material(name="LVL", f_prime_b=8*MPa, f_prime_s=0.5*MPa, f_prime_c=10*MPa, f_prime_t=6*MPa, rho_b=0.85, rho_c=0.9)
-    rafter_restraints = bendRestraints(L_ayT=200*mm, L_ayB=4200*mm, L_alphaT=2100*mm, L_alphaB=2100*mm, 
+    rafter_restraints = bendRestraints(L_ayT=4200*mm, L_ayB=4200*mm, L_alphaT=4200*mm, L_alphaB=4200*mm, 
                                         material=material, section=rafter_section)
-    column_restraints = compRestraints(g_13=1.5, L=4000*mm, L_ax = 4000*mm, L_ay=2100*mm,
+    column_restraints = compRestraints(g_13=1.5, L=2000*mm, L_ax = 2000*mm, L_ay=2100*mm,
                                        x_cont_res = False, y_cont_res = False,
                                        material=material, section=rafter_section)
     mod_factors = ModificationFactors(k_4=1.0, k_6=1.0, k_9=1.0)
@@ -310,7 +310,8 @@ if __name__ == "__main__":
                     utilisation=combined_util
                 ))
 
-        pprint(results_envelope.governing)
+    print(f"Member {members[n].id} - {members[n].member_name}")
+    pprint(results_envelope.governing)
 
     """
         for x, Mx, My, Ax in zip(lc.actions.x, lc.actions.Mz, lc.actions.My, lc.actions.Ax):
